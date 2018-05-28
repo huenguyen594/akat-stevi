@@ -1,0 +1,103 @@
+function dmf = recover(dm, seg, im)
+% Segmentation-guided depth recovery
+% Sintax:
+%     dmf = recover(dm, seg)
+%     dmf = recover(dm, [], im)
+% Inputs:
+%     dm,     matrix with depthmap (in
+%             sensor frame)
+%     seg,    matrix with segmentation labels%             
+%     im,     RGB input image (when segmentation is missing).
+%             If this argument is passed, seg is ignored.
+%
+% Outputs:
+%     dmf,    inpainted depthmap
+%     
+% S. Pertuz
+% Jan18/2017
+
+
+% Parameters %%%%%%%%%%%%%%%%%
+pgap = 25; %This parameter is used for efficienty. It is the
+% lenght (in pixels) of the extrapolation gap outside the region
+% of interest.
+amin = 15; %Minimum area (regions with less than
+% this number of pixels will not be interpolated)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if isempty(seg)&&nargin>2
+    %Super-pixel segmentation:
+    seg = superpixels(im, 400);
+end
+
+
+% Loop thought each segmentation region:
+[m,n] = size(dm);
+labels = unique(seg(:));
+no_labels = length(labels);
+dmf = nan(m, n);
+fprintf('Interpolation      ')
+for l = 1:no_labels
+    mask = seg==labels(l);
+    samples = imerode(mask, ones(3))&~isnan(dm);
+    if sum(samples(:))<amin
+        fprintf('\b\b\b\b\b[%2.0d%%]', floor(100*l/no_labels))
+        continue        
+    end
+    [y,x] = find(mask);
+    x0 = max([1, min(x)-pgap]);
+    y0 = max([1, min(y)-pgap]);
+    x1 = min([n, max(x)+pgap]);
+    y1 = min([m, max(y)+pgap]);
+    tmp = dminit(dm(y0:y1, x0:x1), mask(y0:y1, x0:x1));
+    gamma = 0.01;    
+    D0 = sparse(tmp(:))/gamma;
+    A = Amatrix(tmp, gamma);
+    tmp = full(reshape(A\D0, size(tmp)));
+    dmf(mask) = tmp(mask(y0:y1, x0:x1));
+    fprintf('\b\b\b\b\b[%2.0d%%]', floor(100*l/no_labels))
+end
+
+%Interpolate missing regions:
+if any(isnan(dmf(:)))
+    tmp = dmf;
+    tmp(isnan(dmf))=0;
+    D0 = sparse(tmp(:))/gamma;
+    A = Amatrix(tmp, gamma);
+    tmp = full(reshape(A\D0, size(tmp)));
+    dmf(isnan(dmf)) = tmp(isnan(dmf));
+end
+fprintf('\n')
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function dm = dminit(dm0, mask, pgap)
+% % depth map initialization
+%     samples = mask&~isnan(dm0);    
+%     [y,x] = find(samples);
+%     v = dm0(samples);
+%     xmin = max([1,min(x)-pgap]);
+%     ymin = max([1,min(y)-pgap]);
+%     xmax = min([max(x)+pgap, size(dm0, 2)]);
+%     ymax = min([max(y)+pgap, size(dm0, 1)]);
+%     dm = mean(v)*ones(size(dm0));
+%     [xi, yi] = meshgrid(xmin:xmax, ymin:ymax);
+%     f = scatteredInterpolant(x, y, v,'linear','nearest');
+%     vi = f(xi, yi);
+%     dm(ymin:ymax, xmin:xmax) = vi;
+%     dm(mask) = dm0(mask);
+%     dm(isnan(dm)) = 0;
+% end
+
+function dm = dminit(dm0, mask)
+% depth map initialization    
+    [m, n] = size(dm0);
+    samples = imerode(mask, ones(3))&~isnan(dm0);     
+    v = dm0(samples);        
+    [y, x] = find(samples);
+    f = scatteredInterpolant(x, y, v,'linear','linear');
+    [xi, yi] = meshgrid(1:n, 1:m);
+    dm = f(xi, yi);    
+    dm(mask) = dm0(mask);
+    dm(isnan(dm)) = 0;
+end
