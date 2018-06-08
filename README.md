@@ -16,7 +16,7 @@ Für geänderte Dateien:
 1. git pull
 2. Code lokal ändern
 3. git add <Filename>
-4. git commit <Filename> -m "Kommantar"
+4. git commit <Filename> -m "Kommentar"
 5. git push
 
 
