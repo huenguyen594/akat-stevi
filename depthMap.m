@@ -66,7 +66,7 @@ load('estimationErrors.mat')
 %% GUI to open file
  
 [ workingDir, name, ext] = fileparts( mfilename( 'fullpath'));
-ImageDir = [ workingDir, '/testImages/'];
+ImageDir = [ workingDir, '/Session 7_Beamer/4m/'];
  
 [leftFileName,leftPathName] = uigetfile('*.PNG','Select the left image', ImageDir);
 if isequal(leftFileName,0)
@@ -95,10 +95,10 @@ I1 = imread(fullfile(leftPathName, leftFileName));
 %      'ImageSize', [mrows, ncols]);
  
 %%% View reprojection errors
-h1=figure; showReprojectionErrors(stereoParams);
+% h1=figure; showReprojectionErrors(stereoParams);
  
 %%%Visualize pattern locations
-h2=figure; showExtrinsics(stereoParams, 'CameraCentric');
+% h2=figure; showExtrinsics(stereoParams, 'CameraCentric');
  
 %%% Display parameter estimation errors
 % displayErrors(estimationErrors, stereoParams2c);
@@ -113,7 +113,10 @@ title('Rectified Frames');
 frameLeftGray  = rgb2gray(J1);
 frameRightGray = rgb2gray(J2);
     
-disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 5);
+% disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 5);
+disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 5,...
+               'ContrastThreshold', 0.9, 'UniquenessThreshold', 1,...
+               'DistanceThreshold', 1,  'TextureThreshold' , 0.00001 );
 figure;
 imshow(disparityMap, [0, 64]); % durch 16 teilbar
 title('Disparity Map');
@@ -132,21 +135,21 @@ f2y = 3.6*10^(-6) * stereoParams.CameraParameters2.FocalLength(2);
 dismin = min( abs(disparityMap(:)) );
 f = (f1x + f1y + f2x + f2y)/4 *1000;
 
-depth = base *f ./ (disparityMap*3.6);
+depth = base *f ./ (disparityMap*3.6*10^-3) ;
+depth = depth ./ 1000;
 depthmax = max(depth(:));
 
 
 figure;
-imshow(depth, [0, 16]); % durch 16 teilbar
+imshow(depth, [0, 8]); % durch 16 teilbar
 title('Depth Map');
 colormap (gca, 'jet');
 colorbar
 
-DisparityWLSFilter()
 
 depth_filtered = medfilt2(depth);
 figure;
-imshow(depth_filtered , [0, 16]); % durch 16 teilbar
+imshow(depth_filtered , [0, 8]); % durch 16 teilbar
 title('Depth Map Filtered');
 colormap (gca, 'jet');
 colorbar
@@ -163,19 +166,19 @@ colorbar
 % colorbar
 
 %% 3D reconstruction
-points3D = reconstructScene(disparityMap, stereoParams);
- 
-%%% Convert to meters and create a pointCloud object
-points3D = points3D ./ 1000;
-ptCloud = pointCloud(points3D, 'Color', J1);
- 
-%%% Create a streaming point cloud viewer
-player3D = pcplayer([-3, 3], [-3, 3], [0, 8], 'VerticalAxis', 'y', ...
-    'VerticalAxisDir', 'down');
- 
-%%% Visualize the point cloud
-view(player3D, ptCloud);
- 
+% points3D = reconstructScene(disparityMap, stereoParams);
+%  
+% %%% Convert to meters and create a pointCloud object
+% points3D = points3D ./ 1000;
+% ptCloud = pointCloud(points3D, 'Color', J1);
+%  
+% %%% Create a streaming point cloud viewer
+% player3D = pcplayer([-3, 3], [-3, 3], [0, 8], 'VerticalAxis', 'y', ...
+%     'VerticalAxisDir', 'down');
+%  
+% %%% Visualize the point cloud
+% view(player3D, ptCloud);
+%  
 %%% See additional examples of how to use the calibration data.  At the prompt type:
 % showdemo('StereoCalibrationAndSceneReconstructionExample')
 % showdemo('DepthEstimationFromStereoVideoExample')
