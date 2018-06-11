@@ -22,7 +22,7 @@ f = (f1x + f1y + f2x + f2y)/4 *1000;
 %% GUI to open file
  
 [ workingDir, name, ext] = fileparts( mfilename( 'fullpath'));
-ImageDir = [ workingDir, '/testImages/5m/'];
+ImageDir = [ workingDir, '/Session7_Beamer/5m/'];
  
 [leftFileName,leftPathName] = uigetfile('*.PNG','Select the left image', ImageDir);
 if isequal(leftFileName,0)
@@ -43,18 +43,18 @@ I1 = imread(fullfile(leftPathName, leftFileName));
 I2 = imread(fullfile(rightPathName, rightFileName));
 
 %% Rectify stereo images
-[J1, J2] = rectifyStereoImages(I1, I2, stereoParams, 'OutputView','Full');
+[J1, J2] = rectifyStereoImages(I1, I2, stereoParams, 'OutputView','valid');
 
-% figure;
-% imshow(stereoAnaglyph(J1, J2));
-% title('Rectified stereo image pair');
+figure;
+imshow(stereoAnaglyph(J1, J2));
+title('Rectified stereo image pair');
 
 %% Disparity
 % Matlab disparity;
 disparityRange = [0 64];
 
 blockSize = 23 %% for point pattern
-disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 23,...
+disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 15,...
                'ContrastThreshold', 0.5, 'UniquenessThreshold', 5,...
                'DistanceThreshold', 3,  'TextureThreshold' , 0,...
                'DisparityRange', disparityRange );
@@ -69,11 +69,11 @@ disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 23,...
 % [disparityMap, dcost, pcost, wcost] = stereomatch(J1s(:,:,channel), J2s(:,:,channel), windowsize, disparity_max, spacc);
 
 % Visualize disparity map
-% figure;
-% imshow(disparityMap, disparityRange); % durch 16 teilbar
-% title('Disparity Map');
-% colormap (gca, 'jet');
-% colorbar   
+figure;
+imshow(disparityMap, disparityRange); % durch 16 teilbar
+title('Disparity Map');
+colormap (gca, 'jet');
+colorbar   
 
 %% Depth map
 depth = base *f ./ (disparityMap*3.6*10^-3) ;
@@ -89,30 +89,30 @@ colorbar
 
 %% Depth map denoising/ inpainting
 
-%% Extract all region of interest
-redBand = J1(:,:,1);
-greenBand = J1(:,:,2);
-blueBand = J1(:, :, 3);
-seg = (redBand >= 80) & (greenBand < 25) & (blueBand <60);
-se = strel('disk', 3, 4);
-seg = imdilate(seg, se);
-
-% Finds all the connected components (objects) in the binary image
-cc = bwconncomp(seg, 4);
-% Get centroid of each object
-data = (regionprops(cc,'centroid'));
-centroids = uint16(cat(1, data.Centroid));
-
-delta = zeros(size(centroids,1),1);
-for i=1:size(delta,1)
-    delta(i) = depth(centroids(i,2), centroids(i,1));
-end
-
-delta = abs(delta - d);
-figure;
-imshow(J1);
-hold on;
-for i=1:size(delta,1)
-    plot(centroids(i,1), centroids(i,2), 'go');
-    text( double(centroids(i,1)+15), double(centroids(i,2)), num2str(delta(i)), 'Color', 'blue' );
-end
+% %% Extract all region of interest
+% redBand = I1(:,:,1);
+% greenBand = I1(:,:,2);
+% blueBand = I1(:, :, 3);
+% seg = (redBand >= 80) & (greenBand < 25) & (blueBand <60);
+% se = strel('disk', 3, 4);
+% seg = imdilate(seg, se);
+% 
+% % Finds all the connected components (objects) in the binary image
+% cc = bwconncomp(seg, 4);
+% % Get centroid of each object
+% data = (regionprops(cc,'centroid'));
+% centroids = uint16(cat(1, data.Centroid));
+% 
+% delta = zeros(size(centroids,1),1);
+% for i=1:size(delta,1)
+%     delta(i) = depth(centroids(i,2), centroids(i,1));
+% end
+% 
+% delta = abs(delta - d);
+% figure;
+% imshow(I1);
+% hold on;
+% for i=1:size(delta,1)
+%     plot(centroids(i,1), centroids(i,2), 'go');
+%     text( double(centroids(i,1)+15), double(centroids(i,2)), num2str(delta(i)), 'Color', 'blue' );
+% end
