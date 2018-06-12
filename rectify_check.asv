@@ -41,9 +41,9 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 %% Rectify check
 % [J1, J2] = rectifyStereoImages(I1, I2, stereoParamsSS7, 'OutputView','valid');
 [J1, newOrigin1] = undistortImage(I1, stereoParamsSS7.CameraParameters1);
-[J2, newOrigin2] = undistortImage(I2, stereoParamsSS7.CameraParameters2);
+[J2, newOrigin2] = undistortImage(I2, stereoParamsSS7.CameraParameters1);
 
-[J1s, J2s] = rectifyStereoImages(J1(:,:,2), J2(:,:,2), stereoParamsSS7, 'OutputView','valid');
+% [J1s, J2s] = rectifyStereoImages(J1(:,:,2), J2(:,:,2), stereoParamsSS7, 'OutputView','valid');
 figure;
 imshow(I1);
 figure;
@@ -53,24 +53,15 @@ imshow(J1);
 figure;
 imshow(stereoAnaglyph(J1, J2));
 %% Disparity
-disparityRange = [0 160];
-blockSize = 19 %% for point pattern
+disparityRange = [0 80];
 
-% For undistorted images
-% disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 19,...
-%                'ContrastThreshold', 1, 'UniquenessThreshold', 0,...
+blockSize = 23 %% for point pattern
+% disparityMap = disparity(J1(:,:,1), J2(:,:,1), 'BlockSize', 255,...
+%                'ContrastThreshold', 0.9, 'UniquenessThreshold', 5,...
 %                'DistanceThreshold', [],  ...
 %                'DisparityRange', disparityRange );
 
-% For rectified images
-disparityMap = disparity(J1s, J2s, 'BlockSize', 19,...
-   'ContrastThreshold', 1, 'UniquenessThreshold', 0,...
-   'DistanceThreshold', [],  ...
-   'DisparityRange', disparityRange );
-
-% BlockMatching, ROI too big, cropping needed
-% disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'Methode', 'BlockMatching', 'DisparityRange', disparityRange);
-
+disparityMap = disparity(J1(:,:,2), J2(:,:,2), 
 figure;
 imshow(disparityMap, disparityRange); % durch 16 teilbar
 title('Disparity Map');
@@ -78,7 +69,7 @@ colormap (gca, 'jet');
 colorbar   
 
 %% Depth map
-depth = base *f ./ (disparityMap*3.6*10^-3) ;
+depth = 70 *f ./ (disparityMap*3.6*10^-3) ;
 depth = depth ./ 1000;
 
 % depth = medfilt2(depth, [15 15]);
