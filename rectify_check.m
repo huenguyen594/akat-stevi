@@ -3,18 +3,19 @@
 % save estimationErrorsSS7.mat estimationErrorsSS7 %Saves as a mat file
 close all hidden;
 clear %clear variables in workspace
-load('stereoParamsSS7.mat') %loads it back in and Matlab recognises it is a structure
-stereoParamsSS7 = stereoParameters(stereoParamsSS7) % recreates the stereo parameters object 
+load('stereoParams9.mat') %loads it back in and Matlab recognises it is a structure
+stereoParams = stereoParameters(stereoParams) % recreates the stereo parameters object 
+pixelSize = 3.4342*10^-3;
 
 %% Calculata base and focal length in mm
-base = norm(stereoParamsSS7.TranslationOfCamera2);
-f1x = 3.6*10^(-6) * stereoParamsSS7.CameraParameters1.FocalLength(1);
-f1y = 3.6*10^(-6) * stereoParamsSS7.CameraParameters1.FocalLength(2);
+base = stereoParams.TranslationOfCamera2(1);
+f1x = 3.6*10^(-3) * stereoParams.CameraParameters1.FocalLength(1);
+f1y = 3.6*10^(-3) * stereoParams.CameraParameters1.FocalLength(2);
 
-f2x = 3.6*10^(-6) * stereoParamsSS7.CameraParameters2.FocalLength(1);
-f2y = 3.6*10^(-6) * stereoParamsSS7.CameraParameters2.FocalLength(2);
+f2x = 3.6*10^(-3) * stereoParams.CameraParameters2.FocalLength(1);
+f2y = 3.6*10^(-3) * stereoParams.CameraParameters2.FocalLength(2);
 
-f = (f1x + f1y + f2x + f2y)/4 *1000;
+f = (f1x + f1y + f2x + f2y)/4;
 %% GUI to open file
  
 [ workingDir, name, ext] = fileparts( mfilename( 'fullpath'));
@@ -40,22 +41,28 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 
 %% Rectify check
 % [J1, J2] = rectifyStereoImages(I1, I2, stereoParamsSS7, 'OutputView','valid');
-[J1, newOrigin1] = undistortImage(I1, stereoParamsSS7.CameraParameters1);
-[J2, newOrigin2] = undistortImage(I2, stereoParamsSS7.CameraParameters2);
+% [J1, newOrigin1] = undistortImage(I1, stereoParamsSS7.CameraParameters1);
+% [J2, newOrigin2] = undistortImage(I2, stereoParamsSS7.CameraParameters2);
 
-[J1s, J2s] = rectifyStereoImages(J1(:,:,2), J2(:,:,2), stereoParamsSS7, 'OutputView','valid');
+[J1s, J2s] = rectifyStereoImages(I1(:,:,2), I2(:,:,2), stereoParams, 'OutputView','valid');
+
 figure;
-imshow(I1);
-figure;
-imshow(J1);
-% figure;
-% imshow(J1s);
-figure;
-imshow(stereoAnaglyph(J1, J2));
+imshow(stereoAnaglyph(J1s, J2s));
 %% Disparity
-disparityRange = [0 160];
-blockSize = 19 %% for point pattern
+disparityRange = [48 160];
+blockSize = 5 %% for point pattern
 
+%% Histogrammausgleich
+J1s = histeq(J1s);
+J2s = histeq(J2s);
+
+%% Gauss
+J1s = imgaussfilt(J1s);
+J2s = imgaussfilt(J2s);
+
+%% Median
+J1s = medfilt2(J1s, [5 5]);
+J2s = medfilt2(J2s, [5 5]);
 % For undistorted images
 % disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 19,...
 %                'ContrastThreshold', 1, 'UniquenessThreshold', 0,...
@@ -63,29 +70,43 @@ blockSize = 19 %% for point pattern
 %                'DisparityRange', disparityRange );
 
 % For rectified images
-disparityMap = disparity(J1s, J2s, 'BlockSize', 19,...
-   'ContrastThreshold', 1, 'UniquenessThreshold', 0,...
-   'DistanceThreshold', [],  ...
-   'DisparityRange', disparityRange );
-
+% disparityMap = disparity(J1s, J2s, 'BlockSize', 19,...
+%    'ContrastThreshold', 0.0001, 'UniquenessThreshold', 15,...
+%    'DistanceThreshold', [],  ...
+%    'DisparityRange', disparityRange );
+% disparity matlab standard
+disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0.0001, ...
+                'UniquenessThreshold', 0,...
+                'DistanceThreshold', [],  ...
+                'DisparityRange', disparityRange );
+% owlbread github code
+% disparityMap = disparity2reloaded(imresize(J1s,0.25), imresize(J2s,0.25));
 % BlockMatching, ROI too big, cropping needed
 % disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'Methode', 'BlockMatching', 'DisparityRange', disparityRange);
+
+% disparity stackoverflow
+% [disparityMap, C_min, C] = disparity_stackoverflow(histeq(I1(:,:,2)), histeq(I2(:,:,2)), 45, 130, 21);
 
 figure;
 imshow(disparityMap, disparityRange); % durch 16 teilbar
 title('Disparity Map');
-colormap (gca, 'jet');
+colormap(gca, 'default');
 colorbar   
 
 %% Depth map
-depth = base *f ./ (disparityMap*3.6*10^-3) ;
+
+depth = abs(base) *f ./ (disparityMap*pixelSize) ;
 depth = depth ./ 1000;
 
-% depth = medfilt2(depth, [15 15]);
+%% Median
+depth = medfilt2(depth, [15 15]);
+
+%% gauss
+depth = imgaussfilt(depth);
 
 figure;
 imshow(depth , [0, 8]); 
 title('Depth Map Filtered');
-colormap (gca, 'jet');
+colormap(gca, 'default');
 colorbar
 
