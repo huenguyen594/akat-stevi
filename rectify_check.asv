@@ -3,9 +3,9 @@
 % save estimationErrorsSS7.mat estimationErrorsSS7 %Saves as a mat file
 close all hidden;
 clear %clear variables in workspace
-load('stereoParams8.mat') %loads it back in and Matlab recognises it is a structure
-stereoParams = stereoParameters(stereoParams8) % recreates the stereo parameters object 
-pixelSize = 3.13777*10^-3;
+load('stereoParams10.mat') %loads it back in and Matlab recognises it is a structure
+stereoParams = stereoParameters(stereoParams) % recreates the stereo parameters object 
+pixelSize = 3.48256*10^-3;
 
 %% Calculata base and focal length in mm
 base = stereoParams.TranslationOfCamera2(1);
@@ -49,11 +49,17 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 figure;
 imshow(stereoAnaglyph(J1s, J2s));
 %% Disparity
-disparityRange = [48 160];
+disparityRange = [16 112];
 blockSize = 5 %% for point pattern
+
+%% Histogrammausgleich
 J1s = histeq(J1s);
 J2s = histeq(J2s);
 
+
+%% Median
+J1s = medfilt2(J1s, [5 5]);
+J2s = medfilt2(J2s, [5 5]);
 % For undistorted images
 % disparityMap = disparity(J1(:,:,2), J2(:,:,2), 'BlockSize', 19,...
 %                'ContrastThreshold', 1, 'UniquenessThreshold', 0,...
@@ -66,7 +72,8 @@ J2s = histeq(J2s);
 %    'DistanceThreshold', [],  ...
 %    'DisparityRange', disparityRange );
 % disparity matlab standard
-disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0., 'UniquenessThreshold', 15,...
+disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0.0001, ...
+                'UniquenessThreshold', 0,...
                 'DistanceThreshold', [],  ...
                 'DisparityRange', disparityRange );
 % owlbread github code
@@ -88,11 +95,19 @@ colorbar
 depth = abs(base) *f ./ (disparityMap*pixelSize) ;
 depth = depth ./ 1000;
 
-% depth = medfilt2(depth, [15 15]);
+%% Median
+depth = medfilt2(depth, [15 15]);
+
+%% gauss
+depth = imgaussfilt(depth);
 
 figure;
-imshow(depth , [0, 8]); 
+imshow(depth , [0, 5]); 
 title('Depth Map Filtered');
 colormap(gca, 'default');
 colorbar
+
+%% Write out
+depth_normalized = mat2gray(depth);
+imwrite(depth_normalized, 'depth_normalized.tiff');
 

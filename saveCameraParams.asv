@@ -1,4 +1,4 @@
-stereoParams = toStruct(stereoParams10) %change it into struct
+stereoParams = toStruct(stereoParams9) %change it into struct
 
 save stereoParams10.mat stereoParams %Saves as a mat file
 

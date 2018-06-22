@@ -3,9 +3,9 @@
 % save estimationErrorsSS7.mat estimationErrorsSS7 %Saves as a mat file
 close all hidden;
 clear %clear variables in workspace
-load('stereoParams9.mat') %loads it back in and Matlab recognises it is a structure
+load('stereoParams10.mat') %loads it back in and Matlab recognises it is a structure
 stereoParams = stereoParameters(stereoParams) % recreates the stereo parameters object 
-pixelSize = 3.4342*10^-3;
+pixelSize = 3.48256*10^-3;
 
 %% Calculata base and focal length in mm
 base = stereoParams.TranslationOfCamera2(1);
@@ -49,16 +49,13 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 figure;
 imshow(stereoAnaglyph(J1s, J2s));
 %% Disparity
-disparityRange = [48 160];
+disparityRange = [16 112];
 blockSize = 5 %% for point pattern
 
 %% Histogrammausgleich
 J1s = histeq(J1s);
 J2s = histeq(J2s);
 
-%% Gauss
-J1s = imgaussfilt(J1s);
-J2s = imgaussfilt(J2s);
 
 %% Median
 J1s = medfilt2(J1s, [5 5]);
@@ -105,8 +102,15 @@ depth = medfilt2(depth, [15 15]);
 depth = imgaussfilt(depth);
 
 figure;
-imshow(depth , [0, 8]); 
+imshow(depth , [0, 5]); 
 title('Depth Map Filtered');
 colormap(gca, 'default');
 colorbar
+
+%% Write out
+depth_normalized = mat2gray(depth);
+imwrite(depth_normalized, 'depth_normalized.tiff');
+
+%% Data save
+save('depth.mat', depth);
 

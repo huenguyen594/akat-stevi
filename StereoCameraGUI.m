@@ -73,8 +73,8 @@ mkdir testImages;
 addpath testImages;
 
 % handles.leftVideo = videoinput('macvideo', 1, 'YCbCr422_1280x720');
-handles.leftVideo = videoinput('winvideo', 2, 'RGB24_1280x1024');
-handles.rightVideo = videoinput('winvideo', 1, 'RGB24_1280x1024');
+handles.leftVideo = videoinput('winvideo', 1, 'RGB24_1280x1024');
+handles.rightVideo = videoinput('winvideo', 2, 'RGB24_1280x1024');
 
 
 handles.leftFrame = getsnapshot(handles.leftVideo);

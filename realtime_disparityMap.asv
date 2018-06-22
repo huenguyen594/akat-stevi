@@ -5,72 +5,103 @@ clear %clear variables in workspace
 %% Camera setup
 imaqreset
 % Right camera
-right = videoinput('winvideo', 1, 'RGB24_1280x1024');
+right = videoinput('winvideo', 2, 'RGB24_1280x1024');
 % Left camera
-left = videoinput('winvideo', 2, 'RGB24_1280x1024');%left
+left = videoinput('winvideo', 1, 'RGB24_1280x1024');%left
 
 set([left right],'FramesPerTrigger',Inf);
-set([left right], 'ReturnedColorspace', 'grayscale'); 
+set([left right], 'ReturnedColorspace', 'RGB'); 
+src_left = getselectedsource(left);
+src_left.VerticalFlip = 'on';
+
+src_right = getselectedsource(right);
+src_right.VerticalFlip = 'on';
 
 right.FrameGrabInterval = 1; 
 left.FrameGrabInterval = 1;
 hFigure = figure(1); 
 title('Depth Map');
-% colormap(gca, 'default');
-% colorbar;
 
-load('stereoParams9.mat') %loads it back in and Matlab recognises it is a structure
-stereoParams9 = stereoParameters(stereoParams) % recreates the stereo parameters object 
-base = 76.034525998165490;
-pixelSize = 3.4342*10^-3;
-f = 9.214797770218713;
+
+load('stereoParams10.mat') %loads it back in and Matlab recognises it is a structure
+stereoParams = stereoParameters(stereoParams) % recreates the stereo parameters object 
+base = 72.895433590710810;
+pixelSize = 0.003482560000000;
+f = 9.214831822060825;
+
+nFrame = 0;
+BG = zeros(1287,1002);
+
 try
     start([left right]);
 
     while islogging([left right]) 
 
         % Acquire 1 frame
-        I1 = getsnapshot(left);
-        I2 = getsnapshot(right);
+        I1 = 3.*getsnapshot(left);
+        I2 = 3.*getsnapshot(right);
         
-        I1 = imresize(I1, 0.5);
-        I2 = imresize(I2, 0.5); 
+%         I1 = imresize(I1, 0.5);
+%         I2 = imresize(I2, 0.5); 
         
-        I1 = im2double(I1); I2 = im2double(I2);
+%         I1 = im2double(I1); I2 = im2double(I2);
         % Rectify the image pairs
+        [J1s, J2s] = rectifyStereoImages(I1(:,:,2), I2(:,:,2), stereoParams, 'OutputView','valid');
+
+        %% Disparity
+        disparityRange = [16 112];
+        blockSize = 5 %% for point pattern
+
+        %% Histogrammausgleich
+        J1s = histeq(J1s);
+        J2s = histeq(J2s);
+        %% Median filter
+        J1s = medfilt2(J1s, [5 5]);
+        J2s = medfilt2(J2s, [5 5]);
         
         
-        [frameLeftRect, frameRightRect] = rectifyStereoImages(I1, I2, stereoParams);
+        %% BG berechnen
+        if(nFrame < 5)
+            BG = (BG + J1s)/2;
+            nFrame = nFrame +1;
+        end
+        
+        nFrame = nFrame +1;
+       
+        %% Vordergrund
+        VG = J1s - BG;
+        se = strel('disk',5);
+        VG = imopen(VG, se);
+        s  = regionprops(VG);
+        
+        %% Disparity berechnen
+        disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0.0001, 'UniquenessThreshold', 0,...
+                'DistanceThreshold', [],  ...
+                'DisparityRange', disparityRange );
 
-        w1 =fspecial('log',[5 5],0.5); 
-        av = fspecial('average',[3 3]);
-
-        M1 = imfilter(I1,av,'replicate');  M2 = imfilter(I2,av,'replicate'); 
-        M1 = medfilt2(M1, 'indexed'); M2 = medfilt2(M2,'indexed'); 
-
-        frameLeftGray =  histeq(1.5.* imfilter(M1,w1,'replicate')); 
-        frameRightGray =  histeq(1.5.*imfilter(M2,w1,'replicate')); 
-%         disparityMap = disparity(frameLeftGray, frameRightGray, 'BlockSize', 5);
-        disparityMap = disparity(frameLeftGray, frameRightGray, 'BlockSize', 11,...
-               'ContrastThreshold', 0.001, 'UniquenessThreshold', 15,...
-               'DistanceThreshold', [],  ...
-               'DisparityRange', [48 160]  );
+            
         depth = abs(base) *f ./ (disparityMap*pixelSize) ;
         depth = depth ./ 1000;
+        %% Median
+         depth = medfilt2(depth, [5 5]);
+
+        %% gauss
+%         depth = imgaussfilt(depth);
 %         imshow(disparityMap, [0, 64]);
-        imshow(depth , [0, 6]); 
+        imshow(depth , [0, 5]); 
         title('Depth Map');
-%         colormap(gca, 'default');
+        
+        figure
         flushdata(right, 'triggers');
         flushdata(left, 'triggers');
                
     end
 flushdata(right);
 flushdata(left);
-delete(right)
-clear(right)
-delete(left)
-clear(left)
+delete(right);
+clear(right);
+delete(left);
+clear(left);
 catch err
     
     stop([right left]);
