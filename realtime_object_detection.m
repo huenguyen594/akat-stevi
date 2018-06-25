@@ -94,14 +94,16 @@ try
             
             imshow(J1s);
             title('Left camera');
-            if(size(s,1) >= 1)
-                hold on;
-                for i=1:size(s,1)
-                    rectangle('Position', s(i).BoundingBox ,'EdgeColor','g', 'LineWidth', 2);
-                    flushdata(right, 'triggers');
-                    flushdata(left, 'triggers');
-                end
-            end
+%             if(size(s,1) >= 1)
+%                 hold on;
+%                 for i=1:size(s,1)
+%                     rectangle('Position', s(i).BoundingBox ,'EdgeColor','g', 'LineWidth', 2);
+%                     flushdata(right, 'triggers');
+%                     flushdata(left, 'triggers');
+%                 end
+%             end
+            hold on;
+            rectangle('Position', s.BoundingBox ,'EdgeColor','g', 'LineWidth', 3);
         end
         
     end

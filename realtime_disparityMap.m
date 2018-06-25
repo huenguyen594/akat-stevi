@@ -85,8 +85,7 @@ delete(right);
 clear(right);
 delete(left);
 clear(left);
-catch err
-    
+catch err  
     stop([right left]);
     imaqreset
     disp('Cleaned up')
