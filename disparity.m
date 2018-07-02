@@ -165,7 +165,14 @@ optSGBM.minDisparity        = int32(r.DisparityRange(1));
 optSGBM.numberOfDisparities = int32(r.DisparityRange(2) - r.DisparityRange(1));
 optSGBM.uniquenessRatio     = int32(r.UniquenessThreshold);
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% HERE LOOK!!!!!!%%%%%%%%%
 myBlockSize = 19;% empirisch
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % OpenCV parameters that are not exposed as optional parameters
 optSGBM.P1                  = int32(8 * myBlockSize^2);

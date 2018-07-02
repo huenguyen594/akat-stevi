@@ -4,8 +4,8 @@
 close all hidden;
 clear %clear variables in workspace
 load('stereoParams10.mat') %loads it back in and Matlab recognises it is a structure
-stereoParams = stereoParameters(stereoParams) % recreates the stereo parameters object 
-pixelSize = 3.48256*10^-3;
+stereoParams = stereoParameters(stereoParams); % recreates the stereo parameters object 
+pixelSize = 3.26076*10^-3;
 
 %% Calculata base and focal length in mm
 base = stereoParams.TranslationOfCamera2(1);
@@ -102,7 +102,7 @@ depth = medfilt2(depth, [15 15]);
 depth = imgaussfilt(depth);
 
 figure;
-imshow(depth , [0, 5]); 
+imshow(depth , [0, 10]); 
 title('Depth Map Filtered');
 colormap(gca, 'default');
 colorbar
@@ -112,5 +112,5 @@ depth_normalized = mat2gray(depth);
 imwrite(depth_normalized, 'depth_normalized.tiff');
 
 %% Data save
-save('depth.mat', depth);
+% save('depth.mat', depth);
 

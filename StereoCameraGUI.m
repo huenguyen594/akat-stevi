@@ -72,9 +72,10 @@ addpath rightCamera;
 mkdir testImages;
 addpath testImages;
 
+imaqreset;
 % handles.leftVideo = videoinput('macvideo', 1, 'YCbCr422_1280x720');
-handles.leftVideo = videoinput('winvideo', 1, 'RGB24_1280x1024');
 handles.rightVideo = videoinput('winvideo', 2, 'RGB24_1280x1024');
+handles.leftVideo = videoinput('winvideo', 1, 'RGB24_1280x1024');
 
 
 handles.leftFrame = getsnapshot(handles.leftVideo);
@@ -166,8 +167,8 @@ function captureImages_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Trigger
-handles.leftFrame = 3.*getsnapshot(handles.leftVideo);
-handles.rightFrame = 3.*getsnapshot(handles.rightVideo);
+handles.leftFrame = 5.*getsnapshot(handles.leftVideo);
+handles.rightFrame = 5.*getsnapshot(handles.rightVideo);
 
 % Update handles
 guidata(hObject, handles);
