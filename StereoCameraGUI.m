@@ -167,8 +167,9 @@ function captureImages_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Trigger
-handles.leftFrame = 5.*getsnapshot(handles.leftVideo);
-handles.rightFrame = 5.*getsnapshot(handles.rightVideo);
+faktor = 1;
+handles.leftFrame = faktor.*getsnapshot(handles.leftVideo);
+handles.rightFrame = faktor.*getsnapshot(handles.rightVideo);
 
 % Update handles
 guidata(hObject, handles);

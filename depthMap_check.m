@@ -1,11 +1,8 @@
-% stereoParamsSS7 = toStruct(stereoParamsSS7) %change it into struct
-% save stereoParamsSS7.mat stereoParamsSS7 %Saves as a mat file
-% save estimationErrorsSS7.mat estimationErrorsSS7 %Saves as a mat file
+%% Cleaning
 close all hidden;
 clear %clear variables in workspace
-load('stereoParams10.mat') %loads it back in and Matlab recognises it is a structure
-stereoParams = stereoParameters(stereoParams); % recreates the stereo parameters object 
-pixelSize = 3.26076*10^-3;
+load('stereoParams11.mat'); %loads it back in and Matlab recognises it is a structure
+stereoParams = stereoParameters(stereoParams11); % recreates the stereo parameters object 
 
 %% Calculata base and focal length in mm
 base = stereoParams.TranslationOfCamera2(1);
@@ -16,6 +13,42 @@ f2x = 3.6*10^(-3) * stereoParams.CameraParameters2.FocalLength(1);
 f2y = 3.6*10^(-3) * stereoParams.CameraParameters2.FocalLength(2);
 
 f = (f1x + f1y + f2x + f2y)/4;
+% pixelSize = -base*f/(79*1)*10^-3;
+pixelSize = 3.6*10^-3;
+
+%% Offset-funktion
+x = [79
+62.4375
+43.25
+31.56
+26.375
+22.0625
+19.13
+17
+13.94
+12
+10.06
+];
+x=x';
+
+y = [ 25.59882653
+7.295051022
+9.049413267
+10.27953061
+8.491275511
+7.82287901
+7.019706633
+6.244183674
+6.979765307
+7.017968461
+7.373137756
+];
+y = y';
+
+xq = 10:0.0025:80;
+
+offset = interp1(x,y,xq, 'pchip');
+
 %% GUI to open file
  
 [ workingDir, name, ext] = fileparts( mfilename( 'fullpath'));
@@ -49,8 +82,8 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 figure;
 imshow(stereoAnaglyph(J1s, J2s));
 %% Disparity
-disparityRange = [16 112];
-blockSize = 5 %% for point pattern
+disparityRange = [0 80];
+blockSize = 5; %% for point pattern
 
 %% Histogrammausgleich
 J1s = histeq(J1s);
@@ -76,6 +109,19 @@ disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0.0001
                 'UniquenessThreshold', 0,...
                 'DistanceThreshold', [],  ...
                 'DisparityRange', disparityRange );
+
+%% Disparität Korrektur mit Offset-Funktion
+for x_i=1:size(disparityMap,2)
+    for y_i=1:size(disparityMap,1)
+        disp = disparityMap(y_i,x_i);
+        if(disp >= 10 && disp <= 80)
+            index = ((disp-10)/0.0025) + 10;
+            disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + offset(index);
+        end
+    end
+end
+% disparityMap = disparityMap + offset(disparityMap);
+
 % owlbread github code
 % disparityMap = disparity2reloaded(imresize(J1s,0.25), imresize(J2s,0.25));
 % BlockMatching, ROI too big, cropping needed
@@ -96,20 +142,20 @@ depth = abs(base) *f ./ (disparityMap*pixelSize) ;
 depth = depth ./ 1000;
 
 %% Median
-depth = medfilt2(depth, [15 15]);
+% depth = medfilt2(depth, [25 25]);
 
 %% gauss
-depth = imgaussfilt(depth);
+% depth = imgaussfilt(depth);
 
 figure;
-imshow(depth , [0, 10]); 
+imshow(depth , [0 15]); 
 title('Depth Map Filtered');
 colormap(gca, 'default');
-colorbar
+colorbar;
 
 %% Write out
 depth_normalized = mat2gray(depth);
-imwrite(depth_normalized, 'depth_normalized.tiff');
+% imwrite(depth_normalized, 'depth_normalized.tiff');
 
 %% Data save
 % save('depth.mat', depth);
