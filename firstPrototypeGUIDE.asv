@@ -22,7 +22,7 @@ function varargout = firstPrototypeGUIDE(varargin)
 
 % Edit the above text to modify the response to help firstPrototypeGUIDE
 
-% Last Modified by GUIDE v2.5 24-Jul-2018 14:40:55
+% Last Modified by GUIDE v2.5 24-Jul-2018 12:33:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,17 +57,16 @@ handles.output = hObject;
 
 %% stereoParams
 disp('Start');
-load('stereoParams13.mat'); %loads it back in and Matlab recognises it is a structure
-handles.stereoParams = stereoParameters(stereoParams13); % recreates the stereo parameters object 
-handles.base = 73.529741856656770   ;    
-handles.pixelSize = 0.003347079;
-handles.f = 5.092573034865157;
+load('stereoParams11.mat'); %loads it back in and Matlab recognises it is a structure
+handles.stereoParams = stereoParameters(stereoParams11); % recreates the stereo parameters object 
+handles.base = 74.299152770842840   ;    
+handles.pixelSize = 0.0036;
+handles.f = 5.068075793053239;
 
 global mouseX;
 mouseX = -1;
 global mouseY;
 mouseY = -1;
-global gui_depth;
 
 offset_load = load('Offset.mat');
 handles.offset = offset_load.offset;
@@ -179,7 +178,7 @@ src_right.VerticalFlip = 'on';
                 [J1s, J2s] = rectifyStereoImages(I1(:,:,2), I2(:,:,2), handles.stereoParams, 'OutputView','valid');
             
                 %% Disparity
-                disparityRange = [0 144];
+                disparityRange = [0 80];
             
                 %% Histogrammausgleich
                 J1s = histeq(J1s);
@@ -194,15 +193,15 @@ src_right.VerticalFlip = 'on';
                         'DisparityRange', disparityRange );
                     
                 %% Disparität Korrektur mit Offset-Funktion
-%                 for x_i=1:size(disparityMap,2)
-%                     for y_i=1:size(disparityMap,1)
-%                         dispa = disparityMap(y_i,x_i);
-%                         if(dispa >= 10 && dispa <= 80)
-%                             index = ((dispa-10)/0.0025) + 10;
-%                             disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + handles.offset(index);
-%                         end
-%                     end
-%                 end
+                for x_i=1:size(disparityMap,2)
+                    for y_i=1:size(disparityMap,1)
+                        dispa = disparityMap(y_i,x_i);
+                        if(dispa >= 10 && dispa <= 80)
+                            index = ((dispa-10)/0.0025) + 10;
+                            disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + handles.offset(index);
+                        end
+                    end
+                end
                 
                 %% Depth
                 depth = abs(handles.base) *handles.f ./ (disparityMap*handles.pixelSize) ;
@@ -219,7 +218,7 @@ src_right.VerticalFlip = 'on';
                 if(mouseX > 0 && mouseY >0)
               
                     pos_x = mouseX *size(depth,2);
-                    pos_y = mouseY *size(depth,1);
+                    pos_y = mouseY * round(size(depth,1),0);
                     pos_x = round(pos_x,0);
                     pos_y = round(pos_y,0);
                     disp(pos_x);
@@ -227,8 +226,8 @@ src_right.VerticalFlip = 'on';
                     set(handles.distanceSlider, 'Value', depth(pos_y, pos_x));
                 end
                 
-                near = handles.distanceSlider.Value - handles.thresholdSlider.Value/2;
-                far = handles.distanceSlider.Value + handles.thresholdSlider.Value/2;
+                near = handles.distanceSlider.Value;
+                far = near + handles.thresholdSlider.Value;
                 set(handles.edit1, 'String', num2str(get(handles.distanceSlider,'Value')));
                 set(handles.edit2, 'String', num2str(get(handles.thresholdSlider,'Value')));
                  
@@ -396,3 +395,5 @@ function figure1_ButtonDownFcn(hObject, eventdata, handles)
 % pos = get(hObject, 'CurrentPoint');
 % set(handles.currentPoint, 'String',['Current Point [ ',num2str(pos(1)),' , ', num2str(pos(2)),' ]']);
 end
+
+

@@ -1,9 +1,9 @@
-% stereoParams11 = toStruct(stereoParams11); %change it into struct
-
+stereoParams13 = toStruct(stereoParams13); %change it into struct
+save stereoParams13.mat stereoParams13
 % save Offset.mat offset %Saves as a mat file
 
 
-% save estimationErrors11.mat estimationErrors11 %Saves as a mat file
+save estimationErrors13.mat estimationErrors13 %Saves as a mat file
 
 
 

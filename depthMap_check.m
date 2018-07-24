@@ -1,8 +1,8 @@
 %% Cleaning
 close all hidden;
 clear %clear variables in workspace
-load('stereoParams11.mat'); %loads it back in and Matlab recognises it is a structure
-stereoParams = stereoParameters(stereoParams11); % recreates the stereo parameters object 
+load('stereoParams13.mat'); %loads it back in and Matlab recognises it is a structure
+stereoParams = stereoParameters(stereoParams13); % recreates the stereo parameters object 
 
 %% Calculata base and focal length in mm
 base = stereoParams.TranslationOfCamera2(1);
@@ -31,20 +31,33 @@ x = [79
 ];
 x=x';
 
-y = [ 25.59882653
-7.295051022
-9.049413267
-10.27953061
-8.491275511
-7.82287901
-7.019706633
-6.244183674
-6.979765307
-7.017968461
-7.373137756
+% y = [ 25.59882653
+% 7.295051022
+% 9.049413267
+% 10.27953061
+% 8.491275511
+% 7.82287901
+% 7.019706633
+% 6.244183674
+% 6.979765307
+% 7.017968461
+% 7.373137756
+% ];
+% y = y';
+
+y = [104.5988265
+69.73255102
+52.29941327
+41.83953061
+34.86627551
+29.88537901
+26.14970663
+23.24418367
+20.91976531
+19.01796846
+17.43313776
 ];
 y = y';
-
 xq = 10:0.0025:80;
 
 offset = interp1(x,y,xq, 'pchip');
@@ -82,7 +95,7 @@ I2 = imread(fullfile(rightPathName, rightFileName));
 figure;
 imshow(stereoAnaglyph(J1s, J2s));
 %% Disparity
-disparityRange = [0 80];
+disparityRange = [0 144];
 blockSize = 5; %% for point pattern
 
 %% Histogrammausgleich
@@ -111,15 +124,15 @@ disparityMap = disparity(J1s, J2s,  'BlockSize', 5,  'ContrastThreshold', 0.0001
                 'DisparityRange', disparityRange );
 
 %% Disparität Korrektur mit Offset-Funktion
-for x_i=1:size(disparityMap,2)
-    for y_i=1:size(disparityMap,1)
-        disp = disparityMap(y_i,x_i);
-        if(disp >= 10 && disp <= 80)
-            index = ((disp-10)/0.0025) + 10;
-            disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + offset(index);
-        end
-    end
-end
+% for x_i=1:size(disparityMap,2)
+%     for y_i=1:size(disparityMap,1)
+%         disp = disparityMap(y_i,x_i);
+%         if(disp >= 10 && disp <= 80)
+%             index = ((disp-10)/0.0025) + 10;
+%             disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + offset(index);
+%         end
+%     end
+% end
 % disparityMap = disparityMap + offset(disparityMap);
 
 % owlbread github code
