@@ -57,11 +57,17 @@ handles.output = hObject;
 
 %% stereoParams
 disp('Start');
-load('stereoParams13.mat'); %loads it back in and Matlab recognises it is a structure
-handles.stereoParams = stereoParameters(stereoParams13); % recreates the stereo parameters object 
-handles.base = 73.529741856656770   ;    
-handles.pixelSize = 0.003347079;
-handles.f = 5.092573034865157;
+load('stereoParams14.mat'); %loads it back in and Matlab recognises it is a structure
+handles.stereoParams = stereoParameters(stereoParams14); % recreates the stereo parameters object 
+% StereoParams13
+% handles.base = 73.529741856656770   ;    
+% handles.pixelSize = 0.003523034446473;
+% handles.f = 5.092573034865157;
+% StereoParams14
+handles.base = 72.692357395132800   ;   
+handles.f = 5.074332625803680;
+handles.pixelSize = handles.base*handles.f/(91.875*1.13)*10^-3;
+
 
 global mouseX;
 mouseX = -1;
@@ -69,7 +75,7 @@ global mouseY;
 mouseY = -1;
 global gui_depth;
 
-offset_load = load('Offset.mat');
+offset_load = load('Offset_0108.mat');
 handles.offset = offset_load.offset;
 
 % Camera setup
@@ -194,15 +200,15 @@ src_right.VerticalFlip = 'on';
                         'DisparityRange', disparityRange );
                     
                 %% Disparität Korrektur mit Offset-Funktion
-%                 for x_i=1:size(disparityMap,2)
-%                     for y_i=1:size(disparityMap,1)
-%                         dispa = disparityMap(y_i,x_i);
-%                         if(dispa >= 10 && dispa <= 80)
-%                             index = ((dispa-10)/0.0025) + 10;
-%                             disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + handles.offset(index);
-%                         end
-%                     end
-%                 end
+                for x_i=1:size(disparityMap,2)
+                    for y_i=1:size(disparityMap,1)
+                        dispa = disparityMap(y_i,x_i);
+                        if(dispa >= 10 && dispa <= 144)
+                            index = ((dispa-10)/0.0025) + 10;
+                            disparityMap(y_i,x_i) = disparityMap(y_i,x_i) + handles.offset(index);
+                        end
+                    end
+                end
                 
                 %% Depth
                 depth = abs(handles.base) *handles.f ./ (disparityMap*handles.pixelSize) ;
@@ -225,6 +231,8 @@ src_right.VerticalFlip = 'on';
                     disp(pos_x);
                     disp(pos_y);
                     set(handles.distanceSlider, 'Value', depth(pos_y, pos_x));
+                    
+                    set(handles.disparityValue, 'String', ['Disparity: ',num2str(disparityMap(pos_y, pos_x))]);
                 end
                 
                 near = handles.distanceSlider.Value - handles.thresholdSlider.Value/2;
